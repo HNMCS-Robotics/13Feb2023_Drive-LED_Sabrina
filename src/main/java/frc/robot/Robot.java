@@ -3,14 +3,16 @@
 // the WPILib BSD license file in the root directory of this project.
 
 /**
- * Sabrina Fang
- * ICS4U
- * February 10, 2023
- * Tele-Op Drive and LED lights control with Joystick controllers
+ * AUTHOR: Sabrina Fang
+ * SUBJECT: ICS4U
+ * DATE: February 13, 2023
+ * PROJECT TITLE: Tele-Op Drive and LED lights control with Joystick controllers
+ 
+ * This is v.10Feb2023 but updated to have a different LED lights colour for each button AND
+ * fixed code so the controller joystick and movement of the robot makes sense (EX: left on the controller to go left) 
  */
 
 package frc.robot;
-
 
 //DEFAULT TEMPLATE LIBRARIES
 import edu.wpi.first.wpilibj.TimedRobot;
@@ -18,9 +20,9 @@ import edu.wpi.first.wpilibj.smartdashboard.SendableChooser;
 import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 
 //IMPORT DRIVE LIBRARIES - ALL added on January 10
-import edu.wpi.first.wpilibj.motorcontrol.PWMVictorSPX;
-import edu.wpi.first.wpilibj.drive.DifferentialDrive;
-import edu.wpi.first.wpilibj.motorcontrol.MotorControllerGroup;
+import edu.wpi.first.wpilibj.motorcontrol.PWMVictorSPX; //give PWM controll to Vicor SPX motor
+import edu.wpi.first.wpilibj.drive.DifferentialDrive; //Class for Differential Drive - motors of the wheels on the left and right
+import edu.wpi.first.wpilibj.motorcontrol.MotorControllerGroup; //links motor controller objects together EX: grouping all motors of the LEFT side together
 
 //IMPORT JOYSTICK LIB - Added on Jan 9 
 import edu.wpi.first.wpilibj.Joystick;
@@ -44,19 +46,24 @@ public class Robot extends TimedRobot {
   private static Spark ledLights; //Spark motor controller
 
   //Initialize Basic Drive
-  private final double maxSpeed=0.65;
-  private final double maxTurn=0.65;
+  private final double maxSpeed=0.65; //with boost - RUN SPEED 0.75
+  private final double maxTurn=0.65; //with boost - RUN trun 0.70
   private final double boost =0.25;
 
   private double variableSpeed = maxSpeed;
 
-  private final PWMVictorSPX m_LeftMotorControlFront = new PWMVictorSPX(1);
-  private final PWMVictorSPX m_LeftMotorControlRear = new PWMVictorSPX(0);
-  private final PWMVictorSPX m_RightMotorControlFront = new PWMVictorSPX(2);
-  private final PWMVictorSPX m_RightMotorControlRear = new PWMVictorSPX(3);
-  private final MotorControllerGroup m_Left = new MotorControllerGroup(m_LeftMotorControlFront, m_LeftMotorControlRear);
-  private final MotorControllerGroup m_Right = new MotorControllerGroup(m_RightMotorControlFront, m_RightMotorControlRear);
-  private final DifferentialDrive m_robotDrive = new DifferentialDrive(m_Left, m_Right);
+  //Initialize objects with Motors of each port
+  private final PWMVictorSPX m_LeftMotorControlFront = new PWMVictorSPX(1); //Left-Front is in port 1
+  private final PWMVictorSPX m_LeftMotorControlRear = new PWMVictorSPX(0); //Left-Rear is in port 0
+  private final PWMVictorSPX m_RightMotorControlFront = new PWMVictorSPX(2); //Right-Front is in port 2
+  private final PWMVictorSPX m_RightMotorControlRear = new PWMVictorSPX(3); //Right-Rear is in port 3
+
+  //Grouping motors
+  private final MotorControllerGroup m_Left = new MotorControllerGroup(m_LeftMotorControlFront, m_LeftMotorControlRear); //grouping all motors on the LEFT 
+  private final MotorControllerGroup m_Right = new MotorControllerGroup(m_RightMotorControlFront, m_RightMotorControlRear); //grouping all motors on the RIGHT
+  
+  //Initialize Differential Drive
+  private final DifferentialDrive m_robotDrive = new DifferentialDrive(m_Left, m_Right); //allows each side to be independently moving
 
 
   //Initialize Joystick Controllers
@@ -111,11 +118,11 @@ public class Robot extends TimedRobot {
   @Override
   public void autonomousPeriodic() {
     switch (m_autoSelected) {
-      case kCustomAuto:
+      case kCustomAuto: // Custom Auto Routine - "My Auto"
         // Put custom auto code here
         ledLights.set(0.87); //Set PWM to 0.87 which is blue
         break;
-      case kDefaultAuto:
+      case kDefaultAuto: //Default Auto Routine - "Default"
       default:
         ledLights.set(0.91); //set PWM to 0.91 which is purple
         break;
@@ -135,6 +142,7 @@ public class Robot extends TimedRobot {
                  4
               3     2
                  1
+    **********INTAKE is FRONT, SHOOTER is the BACK*************
      */
     
     //Drive Control
@@ -145,11 +153,11 @@ public class Robot extends TimedRobot {
     };
 
     //Arcade class expects parameters (TURN, Forward) (axis(1) axis(0) (x, y))
-    m_robotDrive.arcadeDrive(variableSpeed*stickDrive.getRawAxis(0),  //this is parameter for TURN
-    maxTurn*stickDrive.getRawAxis(1)); //this is parameter for FORWARD
+    //                      (        this is parameter for TURN        ),  (  this is parameter for FORWARD     )
+    m_robotDrive.arcadeDrive(variableSpeed*stickDrive.getRawAxis(0), maxTurn*stickDrive.getRawAxis(1)); 
     //Removed -1 to get the correct turns
-    //Changed to RawAxis(0) so moving joyStick left and right (0: LX Axis) is turning
-    //Changed to getRawAxis(1) to pushing joystick up is forward 
+    //Changed to RawAxis for TURN to 0 so moving joyStick left and right (0: LX Axis) is turning
+    //Changed to RawAxis for FORWARD to 1 (1: LY Axis) so up is forward 
 
     //Operating Control
     if (stickOperator.getRawButton(1)==true) { //button 1 (Green button)
@@ -162,8 +170,10 @@ public class Robot extends TimedRobot {
       ledLights.set(0.69); //YELLOW
     } else if (stickOperator.getRawButton(5)==true){ //button 5 (Left Trigger)
       ledLights.set(0.57); //PINK
-    } else if (stickOperator.getRawButton(6)==true){ //button 6 (Right Trigger)
+    } else if (stickOperator.getRawButton(6)==true){ //button 6 (Right Trigger);
       ledLights.set(0.91); //PURPLE
+    } else { //if all the conditions are false
+      ledLights.set(0.93); //WHITE
     }
   }
 
